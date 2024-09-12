@@ -166,7 +166,7 @@ class WebsocketManage:
             dict_data = json.loads(message)
         elif isinstance(message, (bytes)): # V1
             # print("RX bytes: " + gzip.decompress(message).decode("utf-8"))
-            dict_data = json.loads(gzip.decompress(message).decode("utf-8"))
+            dict_data = json.loads(gzip.decompress(message))
         else:
             print("RX unknow type : ", type(message))
             return
