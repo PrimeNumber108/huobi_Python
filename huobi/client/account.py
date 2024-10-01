@@ -77,7 +77,12 @@ class AccountClient(object):
             tasks.append(asyncio.ensure_future(
                 self.async_get_account_balance(balance_url, account_item.id, account_balance_json_map)))
 
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # Nếu không có event loop hiện tại, tạo mới
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(asyncio.wait(tasks))
         except Exception as ee:
