@@ -27,6 +27,13 @@ class AccountClientPerformance(AccountClient):
 
         :return: The information of all account balance.
         """
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # Nếu không có event loop hiện tại, tạo mới
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
         server_url = get_default_server_url(self.__kwargs.get("url"))
         tasks = []
         accounts, req_cost_1, cost_manual_1  = super(AccountClientPerformance, self).get_accounts()
@@ -40,13 +47,8 @@ class AccountClientPerformance(AccountClient):
             tasks.append(asyncio.ensure_future(
                 super(AccountClientPerformance, self).async_get_account_balance(balance_url, account_item.id, account_balance_json_map)))
 
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            # Nếu không có event loop hiện tại, tạo mới
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
+       
+
         try:
             loop.run_until_complete(asyncio.wait(tasks))
         except Exception as ee:
