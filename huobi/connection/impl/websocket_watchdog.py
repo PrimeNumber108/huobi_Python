@@ -28,6 +28,12 @@ def watch_dog_job(*args):
             if watch_dog_obj.is_auto_connect:
                 websocket_manage.close_and_wait_reconnect(watch_dog_obj.reconnect_after_ms)
 
+def check_job_count(scheduler, limit=50):
+    """Kiểm tra số lượng job và reset nếu vượt quá giới hạn."""
+    job_count = len(scheduler.get_jobs())
+    if job_count > limit:
+        print(f"Too many jobs ({job_count}). Resetting scheduler...")
+        scheduler.remove_all_jobs()  # Xóa tất cả các job để reset
 
 class WebSocketWatchDog(threading.Thread):
     """Quản lý WebSocket và duy trì kết nối."""
@@ -46,8 +52,11 @@ class WebSocketWatchDog(threading.Thread):
         # Khởi tạo scheduler với ThreadPoolExecutor
         executors = {'default': ThreadPoolExecutor(max_workers=50)}  # Tăng số worker
         self.scheduler = BackgroundScheduler(executors=executors)
+
+        # Thêm job watch_dog và kiểm tra số lượng job
         self.scheduler.add_job(watch_dog_job, "interval", max_instances=20, seconds=30, args=[self])
-        
+        self.scheduler.add_job(check_job_count, "interval", seconds=60, args=[self.scheduler])
+
         # Đăng ký dừng scheduler khi chương trình kết thúc
         atexit.register(self.stop)
 
