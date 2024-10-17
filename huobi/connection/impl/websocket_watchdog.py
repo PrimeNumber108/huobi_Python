@@ -39,7 +39,7 @@ class WebSocketWatchDog(threading.Thread):
         self.reconnect_after_ms = reconnect_after_ms if reconnect_after_ms > heart_beat_limit_ms else heart_beat_limit_ms
         self.logger = logging.getLogger("huobi-client")
         self.scheduler = BlockingScheduler()
-        self.scheduler.add_job(watch_dog_job, "interval", max_instances=10, seconds=1, args=[self])
+        self.scheduler.add_job(watch_dog_job, "interval", max_instances=10, seconds=10, args=[self])
         self.start()
 
     def run(self):
