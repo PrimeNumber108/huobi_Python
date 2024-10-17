@@ -33,7 +33,7 @@ def check_job_count(scheduler, limit=50):
     job_count = len(scheduler.get_jobs())
     if job_count > limit:
         print(f"Too many jobs ({job_count}). Resetting scheduler...")
-        scheduler.remove_all_jobs()  # Xóa tất cả các job để reset
+        scheduler.remove_all_jobs()  # Xóa tất cả các job
 
 class WebSocketWatchDog(threading.Thread):
     """Quản lý WebSocket và duy trì kết nối."""
@@ -53,9 +53,25 @@ class WebSocketWatchDog(threading.Thread):
         executors = {'default': ThreadPoolExecutor(max_workers=50)}  # Tăng số worker
         self.scheduler = BackgroundScheduler(executors=executors)
 
-        # Thêm job watch_dog và kiểm tra số lượng job
-        self.scheduler.add_job(watch_dog_job, "interval", max_instances=20, seconds=30, args=[self])
-        self.scheduler.add_job(check_job_count, "interval", seconds=60, args=[self.scheduler])
+        # Thêm job watch_dog với chu kỳ 30 giây
+        self.scheduler.add_job(
+            watch_dog_job,
+            "interval",
+            max_instances=10,
+            seconds=30,
+            args=[self]
+        )
+
+        # Chỉ thêm job check_job_count nếu chưa tồn tại
+        if not any(job.name == 'check_job_count' for job in self.scheduler.get_jobs()):
+            self.scheduler.add_job(
+                check_job_count,
+                "interval",
+                minutes=5,  # Giảm tần suất kiểm tra xuống còn 5 phút
+                args=[self.scheduler],
+                id='check_job_count',
+                name='check_job_count'
+            )
 
         # Đăng ký dừng scheduler khi chương trình kết thúc
         atexit.register(self.stop)
