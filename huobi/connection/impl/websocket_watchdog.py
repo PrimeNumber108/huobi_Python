@@ -44,9 +44,9 @@ class WebSocketWatchDog(threading.Thread):
         self.logger = self._setup_logger()
 
         # Khởi tạo scheduler với ThreadPoolExecutor
-        executors = {'default': ThreadPoolExecutor(max_workers=20)}
+        executors = {'default': ThreadPoolExecutor(max_workers=50)}
         self.scheduler = BackgroundScheduler(executors=executors)
-        self.scheduler.add_job(watch_dog_job, "interval", max_instances=10, seconds=10, args=[self])
+        self.scheduler.add_job(watch_dog_job, "interval", max_instances=50, seconds=30, args=[self])
         self.start()
 
     def _setup_logger(self):
