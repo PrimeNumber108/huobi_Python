@@ -43,7 +43,15 @@ class WebSocketWatchDog(threading.Thread):
         self.start()
 
     def run(self):
-        self.scheduler.start()
+        try:
+            self.scheduler.start()
+        except (KeyboardInterrupt, SystemExit):
+            self.logger.info("Shutting down scheduler...")
+            self.scheduler.shutdown(wait=False)
+    def stop(self):
+        self.logger.info("Stopping WebSocketWatchDog...")
+        self.scheduler.shutdown(wait=False)  # Dừng scheduler mà không chờ job hoàn thành
+        self.join()  # Chờ thread kết thúc
 
     def on_connection_created(self, websocket_manage):
         self.mutex.acquire()

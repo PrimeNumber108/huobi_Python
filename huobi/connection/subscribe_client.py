@@ -30,7 +30,7 @@ class SubscribeClient(object):
             handler = logging.StreamHandler()
             handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
             logger.addHandler(handler)
-
+            self.logger = logger
         self.__websocket_manage_list = list()
 
     def __create_websocket_manage(self, request):
@@ -80,3 +80,8 @@ class SubscribeClient(object):
             SubscribeClient.subscribe_watch_dog.on_connection_closed(websocket_manage)
             websocket_manage.close()
         self.__websocket_manage_list.clear()
+
+    def stop(self):
+        """Stop the watch dog safely."""
+        self.logger.info("Stopping WebSocketWatchDog...")
+        SubscribeClient.subscribe_watch_dog.scheduler.shutdown(wait=False)
