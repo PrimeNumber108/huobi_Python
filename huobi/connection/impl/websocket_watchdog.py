@@ -4,13 +4,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from huobi.connection.impl.private_def import *
 from huobi.utils.time_service import get_current_timestamp
-
+import atexit
 
 def watch_dog_job(*args):
     """Kiểm tra các kết nối và quản lý trạng thái WebSocket."""
     watch_dog_obj = args[0]
 
-    for idx, websocket_manage in enumerate(watch_dog_obj.websocket_manage_list):
+    for websocket_manage in watch_dog_obj.websocket_manage_list:
         if websocket_manage.request.auto_close:
             continue  # Bỏ qua nếu auto_close được bật
 
@@ -44,9 +44,13 @@ class WebSocketWatchDog(threading.Thread):
         self.logger = self._setup_logger()
 
         # Khởi tạo scheduler với ThreadPoolExecutor
-        executors = {'default': ThreadPoolExecutor(max_workers=50)}
+        executors = {'default': ThreadPoolExecutor(max_workers=50)}  # Tăng số worker
         self.scheduler = BackgroundScheduler(executors=executors)
-        self.scheduler.add_job(watch_dog_job, "interval", max_instances=50, seconds=30, args=[self])
+        self.scheduler.add_job(watch_dog_job, "interval", max_instances=20, seconds=30, args=[self])
+        
+        # Đăng ký dừng scheduler khi chương trình kết thúc
+        atexit.register(self.stop)
+
         self.start()
 
     def _setup_logger(self):
@@ -68,9 +72,10 @@ class WebSocketWatchDog(threading.Thread):
 
     def stop(self):
         """Dừng scheduler và thread an toàn."""
-        self.logger.info("Stopping WebSocketWatchDog...")
-        self.scheduler.shutdown(wait=False)  # Dừng scheduler ngay lập tức
-        self.join()  # Chờ thread kết thúc
+        if self.scheduler.running:
+            self.logger.info("Stopping WebSocketWatchDog...")
+            self.scheduler.shutdown(wait=False)  # Dừng scheduler ngay lập tức
+            self.join()  # Chờ thread kết thúc
 
     def on_connection_created(self, websocket_manage):
         """Thêm kết nối WebSocket mới."""
